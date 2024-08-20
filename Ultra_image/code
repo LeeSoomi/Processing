@@ -34,12 +34,15 @@ Serial myPort;
 float distance;
 PImage img;
 float scaleFactor;
+float smoothDistance;
 
 void setup() {
   size(800, 600);  // 윈도우 크기 설정
   img = loadImage("coin.jpg");  // 사용하려는 이미지 경로
   myPort = new Serial(this, Serial.list()[0], 9600);  // 아두이노 시리얼 포트 연결
   scaleFactor = 1.0;  // 초기 확대/축소 비율
+  smoothDistance = 0;  // 초기 거리값
+  frameRate(60);  // 프레임 속도 설정
 }
 
 void draw() {
@@ -50,18 +53,20 @@ void draw() {
       float newDistance = float(inString);
       
       // distance 값이 100을 초과하면 100으로 고정
-      if (newDistance > 100) {
-        newDistance = 100;
+      if (newDistance > 30) {
+        newDistance = 30;
       }
 
       if (newDistance > 0) {
-        distance = newDistance;
-        // 거리에 비례한 확대/축소 비율 계산
-        scaleFactor = map(distance, 0, 100, 2.0, 1.0);  // 1.0은 화면 꽉 참, 2.0은 확대됨
+        // 거리값을 점진적으로 변화시키기 위해 보간 처리
+        smoothDistance = lerp(smoothDistance, newDistance, 0.1);
       }
     }
   }
   
+  // 거리에 비례한 확대/축소 비율 계산
+  scaleFactor = map(smoothDistance, 0, 30, 3.0, 1.0);  // 1.0은 화면 꽉 참, 2.0은 확대됨
+
   background(255);
   
   // 현재 화면에 꽉 차는 크기 계산
