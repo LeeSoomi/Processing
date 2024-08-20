@@ -33,11 +33,13 @@ import processing.serial.*;
 Serial myPort;
 float distance;
 PImage img;
+float scaleFactor;
 
 void setup() {
-  size(800, 600);
-  img = loadImage("your_image.jpg");  // 사용하려는 이미지 경로
+  size(800, 600);  // 윈도우 크기 설정
+  img = loadImage("coin.jpg");  // 사용하려는 이미지 경로
   myPort = new Serial(this, Serial.list()[0], 9600);  // 아두이노 시리얼 포트 연결
+  scaleFactor = 1.0;  // 초기 확대/축소 비율
 }
 
 void draw() {
@@ -46,19 +48,34 @@ void draw() {
     if (inString != null) {
       inString = trim(inString);
       float newDistance = float(inString);
+      
+      // distance 값이 100을 초과하면 100으로 고정
+      if (newDistance > 100) {
+        newDistance = 100;
+      }
+
       if (newDistance > 0) {
         distance = newDistance;
+        // 거리에 비례한 확대/축소 비율 계산
+        scaleFactor = map(distance, 0, 100, 2.0, 1.0);  // 1.0은 화면 꽉 참, 2.0은 확대됨
       }
     }
   }
   
   background(255);
   
-  // 거리에 비례한 이미지 크기 계산
-  float scaleFactor = map(distance, 0, 100, 2.0, 0.5);  // 0~100cm를 이미지 확대/축소 비율로 매핑
-  float imgWidth = img.width * scaleFactor;
-  float imgHeight = img.height * scaleFactor;
+  // 현재 화면에 꽉 차는 크기 계산
+  float baseWidth = width;
+  float baseHeight = height;
+
+  // 거리에 비례해 이미지 확대
+  float imgWidth = baseWidth * scaleFactor;
+  float imgHeight = baseHeight * scaleFactor;
+  
+  // 확대된 이미지의 중심을 맞추기 위해 이미지 위치 조정
+  float xPos = width / 2 - imgWidth / 2;
+  float yPos = height / 2 - imgHeight / 2;
   
   // 이미지 그리기
-  image(img, width/2 - imgWidth/2, height/2 - imgHeight/2, imgWidth, imgHeight);
+  image(img, xPos, yPos, imgWidth, imgHeight);
 }
