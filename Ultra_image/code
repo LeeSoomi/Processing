@@ -1,0 +1,64 @@
+// 아두이노코드
+#define TRIG_PIN 9
+#define ECHO_PIN 10
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+}
+
+void loop() {
+  long duration, distance;
+  
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  
+  duration = pulseIn(ECHO_PIN, HIGH);
+  distance = (duration / 2) / 29.1;  // 센티미터로 변환
+  
+  Serial.println(distance);  // 시리얼로 거리값 전송
+  
+  delay(100);  // 측정 간격 조정
+}
+
+
+//프로세싱 코드
+import processing.serial.*;
+
+Serial myPort;
+float distance;
+PImage img;
+
+void setup() {
+  size(800, 600);
+  img = loadImage("your_image.jpg");  // 사용하려는 이미지 경로
+  myPort = new Serial(this, Serial.list()[0], 9600);  // 아두이노 시리얼 포트 연결
+}
+
+void draw() {
+  if (myPort.available() > 0) {
+    String inString = myPort.readStringUntil('\n');
+    if (inString != null) {
+      inString = trim(inString);
+      float newDistance = float(inString);
+      if (newDistance > 0) {
+        distance = newDistance;
+      }
+    }
+  }
+  
+  background(255);
+  
+  // 거리에 비례한 이미지 크기 계산
+  float scaleFactor = map(distance, 0, 100, 2.0, 0.5);  // 0~100cm를 이미지 확대/축소 비율로 매핑
+  float imgWidth = img.width * scaleFactor;
+  float imgHeight = img.height * scaleFactor;
+  
+  // 이미지 그리기
+  image(img, width/2 - imgWidth/2, height/2 - imgHeight/2, imgWidth, imgHeight);
+}
